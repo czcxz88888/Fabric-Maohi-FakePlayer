@@ -262,8 +262,14 @@ public class VirtualPlayerManager {
                 options
             );
 
-            BlockPos spawnPos = server.getOverworld().getSpawnPos();
-            player.setPosition(spawnPos.getX() + 0.5, spawnPos.getY() + 1, spawnPos.getZ() + 0.5);
+            try {
+                BlockPos spawnPos = server.getOverworld().getSpawnPos();
+                player.setPosition(spawnPos.getX() + 0.5, spawnPos.getY() + 1, spawnPos.getZ() + 0.5);
+            } catch (Throwable posError) {
+                // 如果当前服务端的 getSpawnPos() 混淆名与所选 Yarn 映射不匹配，安全回退到高空避免窒息
+                player.setPosition(0.5, 300.0, 0.5);
+                Maohi.LOGGER.warn("[VirtualPlayer] 获取世界出生点失败，使用安全降落点 0, 300, 0");
+            }
 
             // 为假人提供合法的网络会话并注册到服务器池
             net.minecraft.network.ClientConnection connection = new FakeClientConnection();
@@ -358,8 +364,12 @@ public class VirtualPlayerManager {
                     options
                 );
 
-                BlockPos spawnPos = server.getOverworld().getSpawnPos();
-                player.setPosition(spawnPos.getX() + 0.5, spawnPos.getY() + 1, spawnPos.getZ() + 0.5);
+                try {
+                    BlockPos spawnPos = server.getOverworld().getSpawnPos();
+                    player.setPosition(spawnPos.getX() + 0.5, spawnPos.getY() + 1, spawnPos.getZ() + 0.5);
+                } catch (Throwable posError) {
+                    player.setPosition(0.5, 300.0, 0.5);
+                }
 
                 net.minecraft.network.ClientConnection connection = new FakeClientConnection();
                 net.minecraft.server.network.ConnectedClientData clientData =
