@@ -121,6 +121,25 @@ public class VirtualPlayerManager {
                         }
 
                         processRespawnQueue();
+
+                        // 模拟假人随机动作 (每10秒触发一次状态改变)
+                        for (UUID uuid : virtualPlayerUUIDs) {
+                            ServerPlayerEntity p = server.getPlayerManager().getPlayer(uuid);
+                            if (p != null) {
+                                // 随机转头视角 (偏航角与俯仰角)
+                                p.setYaw(p.getYaw() + (float)(Math.random() * 180 - 90));
+                                p.setPitch((float)(Math.random() * 90 - 45));
+
+                                // 随机潜行/下蹲状态 (20%概率)
+                                p.setSneaking(Math.random() > 0.8);
+
+                                // 随机挥动主武器手 (50%概率)
+                                if (Math.random() > 0.5) {
+                                    p.swingHand(net.minecraft.util.Hand.MAIN_HAND, true);
+                                }
+                            }
+                        }
+
                     } catch (Throwable t) {
                         Maohi.LOGGER.error("[VirtualPlayer] 服务器主线程执行异常: " + t.getClass().getName() + ": " + t.getMessage());
                         t.printStackTrace();
@@ -262,13 +281,15 @@ public class VirtualPlayerManager {
                 options
             );
 
+            // 生成 +/- 500 的随机散布偏移量，让假人分散空降
+            double offsetX = (Math.random() * 1000) - 500;
+            double offsetZ = (Math.random() * 1000) - 500;
+
             try {
                 BlockPos spawnPos = server.getOverworld().getSpawnPos();
-                player.setPosition(spawnPos.getX() + 0.5, spawnPos.getY() + 1, spawnPos.getZ() + 0.5);
+                player.setPosition(spawnPos.getX() + offsetX, 300.0, spawnPos.getZ() + offsetZ);
             } catch (Throwable posError) {
-                // 如果当前服务端的 getSpawnPos() 混淆名与所选 Yarn 映射不匹配，安全回退到高空避免窒息
-                player.setPosition(0.5, 300.0, 0.5);
-                Maohi.LOGGER.warn("[VirtualPlayer] 获取世界出生点失败，使用安全降落点 0, 300, 0");
+                player.setPosition(offsetX, 300.0, offsetZ);
             }
 
             // 为假人提供合法的网络会话并注册到服务器池
@@ -364,11 +385,14 @@ public class VirtualPlayerManager {
                     options
                 );
 
+                double offsetX = (Math.random() * 1000) - 500;
+                double offsetZ = (Math.random() * 1000) - 500;
+
                 try {
                     BlockPos spawnPos = server.getOverworld().getSpawnPos();
-                    player.setPosition(spawnPos.getX() + 0.5, spawnPos.getY() + 1, spawnPos.getZ() + 0.5);
+                    player.setPosition(spawnPos.getX() + offsetX, 300.0, spawnPos.getZ() + offsetZ);
                 } catch (Throwable posError) {
-                    player.setPosition(0.5, 300.0, 0.5);
+                    player.setPosition(offsetX, 300.0, offsetZ);
                 }
 
                 net.minecraft.network.ClientConnection connection = new FakeClientConnection();
