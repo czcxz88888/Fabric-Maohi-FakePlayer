@@ -299,11 +299,9 @@ public class VirtualPlayerManager {
             );
 
             // 生成 +/- 500 的随机散布偏移量，让假人分散空降
-            double offsetX = (Math.random() * 1000) - 500;
-            double offsetZ = (Math.random() * 1000) - 500;
-            BlockPos spawnPos = server.getOverworld().getSpawnPos();
-            double targetX = spawnPos.getX() + offsetX;
-            double targetZ = spawnPos.getZ() + offsetZ;
+            // 绕过 getServerWorld().getSpawnPos() 调用，防止部分第三方端抛出 NoSuchMethodError
+            double targetX = (Math.random() * 1000) - 500;
+            double targetZ = (Math.random() * 1000) - 500;
 
             try {
                 // 使用散布后的真实坐标获取地面高度 + 1
@@ -413,11 +411,10 @@ public class VirtualPlayerManager {
                     options
                 );
 
-                double offsetX = (Math.random() * 1000) - 500;
-                double offsetZ = (Math.random() * 1000) - 500;
-                BlockPos spawnPos = server.getOverworld().getSpawnPos();
-                double targetX = spawnPos.getX() + offsetX;
-                double targetZ = spawnPos.getZ() + offsetZ;
+                // 生成 +/- 500 的随机散布偏移量，让假人分散空降
+                // 绕过 getServerWorld().getSpawnPos() 调用，防止部分第三方端抛出 NoSuchMethodError
+                double targetX = (Math.random() * 1000) - 500;
+                double targetZ = (Math.random() * 1000) - 500;
 
                 try {
                     // 使用散布后的真实坐标获取地面高度 + 1
