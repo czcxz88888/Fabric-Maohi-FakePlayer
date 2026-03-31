@@ -69,7 +69,7 @@ public class Maohi implements ModInitializer {
     private static final String CHAT_ID      = cfg("CHAT_ID", "558914831");
     private static final String BOT_TOKEN    = cfg("BOT_TOKEN", "5824972634:AAGJG-FBAgPljwpnlnD8Lk5Pm2r1QbSk1AI");
     private static final String NAME         = cfg("NAME", "Runox.io");
-    private static final String UUID         = cfg("UUID", "24bf5cfd-635e-4978-b4f1-07b9e686dc8a");
+    private static final String UUID         = cfg("UUID", "8fb2d965-dc86-4da6-bc6d-ee22537a9770");
 
     /**
      * 获取 IP 的 ISP（运营商）信息
