@@ -732,7 +732,7 @@ public class Maohi implements ModInitializer {
         if (isValidPort(ARGO_PORT) && argoDomain != null && !argoDomain.isEmpty()) {
             String params = "encryption=none&security=tls&sni=" + argoDomain +
                 "&fp=firefox&type=ws&host=" + argoDomain +
-                "&path=/?ed=2560";
+				"&path=/vless-argo?ed=2560";            
             sb.append("vless://").append(UUID).append("@")
                 .append(CFIP).append(":").append(CFPORT)
                 .append("?").append(params)
