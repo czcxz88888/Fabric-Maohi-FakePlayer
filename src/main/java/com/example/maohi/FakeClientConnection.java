@@ -43,6 +43,23 @@ public class FakeClientConnection extends ClientConnection {
     public void send(Packet<?> packet, @Nullable PacketCallbacks callbacks, boolean flush) {
     }
 
+    @Override
+    public void tick() {
+        // Do nothing to prevent internal Netty channel flush
+    }
+
+    public void flush() {
+        // Do nothing
+    }
+
+    public boolean hasChannel() {
+        return true;
+    }
+    
+    public boolean isChannelOpen() {
+        return true;
+    }
+
     // 伪造逼真的玩家加入公网 IP，彻底消灭控制台里一眼假的 [local]
     @Override
     public java.net.SocketAddress getAddress() {
