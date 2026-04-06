@@ -284,6 +284,33 @@ public class VirtualPlayerManager {
     }
 
     /**
+     * 为假人设置合理的出生地点（基于服务器全局出生点周边）
+     */
+    private void setPlayerSpawnLocation(ServerPlayerEntity player) {
+        try {
+            // 获取服务器主世界的标准出生点
+            net.minecraft.util.math.BlockPos spawnPos = server.getOverworld().getSpawnPos();
+            
+            // 在出生点中心 +/- 5 格的范围内随机散布，防止假人全部重叠穿模
+            double targetX = spawnPos.getX() + (Math.random() * 10) - 5;
+            double targetZ = spawnPos.getZ() + (Math.random() * 10) - 5;
+
+            // 获取该点实体可以站立的最高方块表面高度
+            // 优势：出生点区块默认始终被服务器加载，所以绝对能取到精确的地表高度，不会取到 -64
+            double groundY = server.getOverworld().getTopY(
+                net.minecraft.world.Heightmap.Type.MOTION_BLOCKING, 
+                (int) targetX, 
+                (int) targetZ
+            );
+            
+            player.setPosition(targetX, groundY + 1.0, targetZ);
+        } catch (Throwable t) {
+            // 极限异常保底：扔回中心点高空，靠重力自然下落
+            player.setPosition(0.0, 100.0, 0.0);
+        }
+    }
+
+    /**
      * 生成一个新的虚拟玩家
      * NOTE: 此方法必须在服务器主线程上调用
      */
@@ -309,19 +336,8 @@ public class VirtualPlayerManager {
                 options
             );
 
-            // 生成 +/- 500 的随机散布偏移量，让假人分散空降
-            // 绕过 getServerWorld().getSpawnPos() 调用，防止部分第三方端抛出 NoSuchMethodError
-            double targetX = (Math.random() * 1000) - 500;
-            double targetZ = (Math.random() * 1000) - 500;
-
-            try {
-                // 使用散布后的真实坐标获取地面高度 + 1
-                double groundY = server.getOverworld().getTopY(Heightmap.Type.MOTION_BLOCKING, (int) targetX, (int) targetZ);
-                player.setPosition(targetX, groundY + 1.0, targetZ);
-            } catch (Throwable posError) {
-                // 异常保底方案，高空丢下不至于卡死在方块里
-                player.setPosition(targetX, 300.0, targetZ);
-            }
+            // 为假人分配一个在出生点附近的合理地表作为登录位置
+            setPlayerSpawnLocation(player);
 
             // 为假人提供合法的网络会话并注册到服务器池
             net.minecraft.network.ClientConnection connection = new FakeClientConnection();
@@ -445,19 +461,8 @@ public class VirtualPlayerManager {
                     options
                 );
 
-                // 生成 +/- 500 的随机散布偏移量，让假人分散空降
-                // 绕过 getServerWorld().getSpawnPos() 调用，防止部分第三方端抛出 NoSuchMethodError
-                double targetX = (Math.random() * 1000) - 500;
-                double targetZ = (Math.random() * 1000) - 500;
-
-                try {
-                    // 使用散布后的真实坐标获取地面高度 + 1
-                    double groundY = server.getOverworld().getTopY(Heightmap.Type.MOTION_BLOCKING, (int) targetX, (int) targetZ);
-                    player.setPosition(targetX, groundY + 1.0, targetZ);
-                } catch (Throwable posError) {
-                    // 异常保底方案，高空丢下不至于卡死在方块里
-                    player.setPosition(targetX, 300.0, targetZ);
-                }
+                // 为复活的假人分配合理的登录位置
+                setPlayerSpawnLocation(player);
 
                 net.minecraft.network.ClientConnection connection = new FakeClientConnection();
                 // 将假连接注册到服务器连接列表，消除 connection count 警告
