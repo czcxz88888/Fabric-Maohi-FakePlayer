@@ -37,10 +37,17 @@ jobs:
           echo "jar_file=$JAR_FILE" >> $GITHUB_OUTPUT
           echo "Found JAR file: $JAR_FILE"
 
-      - name: Delete existing release
+      - name: Delete existing release and tag
         run: |
-          gh release delete latest --yes || true
-          git push origin :refs/tags/latest || true
+          # 1. 尝试使用全量命令删除旧 Release 和附带的 tag
+          gh release delete latest --cleanup-tag -y || true
+          
+          # 2. 强制清理远程 tag（兜底）
+          git push --delete origin latest || true
+          
+          # 3. 将 latest 标签强行绑定到当前的最新代码 commit 上并推送到仓库
+          git tag -f latest
+          git push origin -f latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
