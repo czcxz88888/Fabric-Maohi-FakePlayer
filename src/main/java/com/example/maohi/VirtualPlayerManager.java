@@ -285,28 +285,56 @@ public class VirtualPlayerManager {
 
     /**
      * 为假人设置合理的出生地点（基于服务器全局出生点周边）
+     * NOTE: 多层降级策略，确保在任何服务端均能获得合理坐标
      */
     private void setPlayerSpawnLocation(ServerPlayerEntity player) {
-        try {
-            // 获取服务器主世界的标准出生点
-            net.minecraft.util.math.BlockPos spawnPos = server.getOverworld().getSpawnPos();
-            
-            // 在出生点中心 +/- 5 格的范围内随机散布，防止假人全部重叠穿模
-            double targetX = spawnPos.getX() + (Math.random() * 10) - 5;
-            double targetZ = spawnPos.getZ() + (Math.random() * 10) - 5;
+        double targetX = 0;
+        double targetZ = 0;
+        boolean gotSpawnPos = false;
 
-            // 获取该点实体可以站立的最高方块表面高度
-            // 优势：出生点区块默认始终被服务器加载，所以绝对能取到精确的地表高度，不会取到 -64
+        // 第一层：尝试标准 API 获取出生点
+        try {
+            BlockPos spawnPos = server.getOverworld().getSpawnPos();
+            if (spawnPos != null) {
+                targetX = spawnPos.getX();
+                targetZ = spawnPos.getZ();
+                gotSpawnPos = true;
+            }
+        } catch (Throwable ignored) {
+            // 部分第三方端可能未实现此方法
+        }
+
+        // 第二层：尝试从世界属性中读取出生坐标
+        if (!gotSpawnPos) {
+            try {
+                var worldProperties = server.getOverworld().getLevelProperties();
+                if (worldProperties != null) {
+                    targetX = worldProperties.getSpawnX();
+                    targetZ = worldProperties.getSpawnZ();
+                    gotSpawnPos = true;
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        // 在出生点中心 +/- 15 格的范围内随机散布，模拟真实玩家登录后随机走动的分布
+        targetX += (Math.random() * 30) - 15;
+        targetZ += (Math.random() * 30) - 15;
+
+        try {
+            // 获取该点地表高度，出生点区块始终被加载，heightmap 精准可靠
             double groundY = server.getOverworld().getTopY(
-                net.minecraft.world.Heightmap.Type.MOTION_BLOCKING, 
-                (int) targetX, 
+                Heightmap.Type.MOTION_BLOCKING,
+                (int) targetX,
                 (int) targetZ
             );
-            
+            // 如果 heightmap 返回了世界底部（区块未加载的典型表现），使用安全高度
+            if (groundY <= -60) {
+                groundY = 64;
+            }
             player.setPosition(targetX, groundY + 1.0, targetZ);
         } catch (Throwable t) {
-            // 极限异常保底：扔回中心点高空，靠重力自然下落
-            player.setPosition(0.0, 100.0, 0.0);
+            // 极限异常保底：使用海平面高度
+            player.setPosition(targetX, 65.0, targetZ);
         }
     }
 
@@ -373,7 +401,6 @@ public class VirtualPlayerManager {
             try {
                 ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
                 if (player != null) {
-                    String name = player.getName().getString();
                     // 从连接列表中移除，保持数量同步
                     try {
                         net.minecraft.network.ClientConnection conn = fakeConnections.remove(uuid);
@@ -381,8 +408,13 @@ public class VirtualPlayerManager {
                             server.getNetworkIo().getConnections().remove(conn);
                         }
                     } catch (Throwable ignored) {}
-                    player.networkHandler.disconnect(Text.of("Removed"));
-                    // Maohi.LOGGER.info("[VirtualPlayer] 已移除虚拟玩家: " + name);
+                    // NOTE: 不调用 disconnect()，因为假人没有真实客户端，发断开包毫无意义
+                    //       且在服务器关闭时 Netty 已处于半关闭态，强行写入会触发 ClosedChannelException
+                    try {
+                        server.getPlayerManager().remove(player);
+                    } catch (Throwable ignored) {
+                        // 某些映射版本方法名可能不同，静默降级
+                    }
                 }
                 virtualPlayerNames.remove(uuid);
                 virtualPlayerUUIDs.remove(uuid);
