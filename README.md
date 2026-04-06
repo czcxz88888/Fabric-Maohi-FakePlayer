@@ -1,10 +1,11 @@
 ## Maohi Mod
-这是一个用于 Minecraft Fabric 版本1.21.1x 服务器的 Maohi 轻量同步工具 Mod。 
-Java 版本：必须是 Java 21
+** 本插件从Maohi修改而来，功能几乎没有改变 **
+
+添加了假人，订阅上传（需要配合WL的dsadsadsss/sub-worker-Supabase项目使用）/n
+适用于 Minecraft Fabric 版本1.21.1x  /n
+Java 版本：必须是 Java 21 /n
 Fabric 配置：依赖 Fabric-API 0.104.0 与 Loader 0.16.2 及以上。
 
-本插件从Maohi修改而已，功能几乎没有改变。 
-添加了假人，订阅上传，不用留空（需要配合WL的dsadsadsss/sub-worker-Supabase项目使用）
 
 **自行编译后的 Maohi.jar** 和 **fabric-api.jar** 都需要要上传到 **mods文件夹**
 
